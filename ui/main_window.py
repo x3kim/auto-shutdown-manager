@@ -16,6 +16,10 @@ class MainWindow(ctk.CTk):
         current_lang = self.config.get("language")
         self.loc = LocalizationManager(current_lang) 
         
+        # Design laden und setzen (WICHTIG: Bevor das Fenster gezeigt wird)
+        self.appearance_mode = self.config.get("appearance_mode")
+        ctk.set_appearance_mode(self.appearance_mode)
+        
         self.is_monitoring = False
         self.warning_active = False
         self.target_minutes = int(self.config.get("target_minutes"))
@@ -27,8 +31,7 @@ class MainWindow(ctk.CTk):
 
     def setup_window(self):
         self.title("Auto Shutdown Manager v2")
-        self.geometry("500x650") # Etwas höher für die neue Anzeige
-        ctk.set_appearance_mode("Dark")
+        self.geometry("500x650")
         ctk.set_default_color_theme("blue")
         self.grid_columnconfigure(0, weight=1)
 
@@ -37,10 +40,25 @@ class MainWindow(ctk.CTk):
         self.frame_top = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_top.pack(pady=10, padx=20, fill="x")
 
-        self.combo_lang = ctk.CTkComboBox(self.frame_top, values=["Deutsch", "English"], command=self.change_language, width=100)
-        self.combo_lang.set("Deutsch" if self.config.get("language") == "de" else "English")
-        self.combo_lang.pack(side="right")
+        # Container für Buttons oben rechts (Sprache + DarkMode)
+        self.frame_top_controls = ctk.CTkFrame(self.frame_top, fg_color="transparent")
+        self.frame_top_controls.pack(side="right")
 
+        # Dark Mode Switch
+        self.switch_dark = ctk.CTkSwitch(self.frame_top_controls, text="Dark", command=self.toggle_appearance)
+        # Status des Switches setzen basierend auf Config
+        if self.appearance_mode == "Dark":
+            self.switch_dark.select()
+        else:
+            self.switch_dark.deselect()
+        self.switch_dark.pack(side="left", padx=(0, 15))
+
+        # Sprachauswahl
+        self.combo_lang = ctk.CTkComboBox(self.frame_top_controls, values=["Deutsch", "English"], command=self.change_language, width=100)
+        self.combo_lang.set("Deutsch" if self.config.get("language") == "de" else "English")
+        self.combo_lang.pack(side="left")
+
+        # Titel (linksbündig bzw. zentriert im Rest)
         self.lbl_head = ctk.CTkLabel(self, text="TITLE", font=("Segoe UI", 26, "bold"))
         self.lbl_head.pack(pady=(5, 5))
         self.lbl_sub = ctk.CTkLabel(self, text="SUBTITLE", text_color="gray")
@@ -94,8 +112,7 @@ class MainWindow(ctk.CTk):
         self.entry_time.bind("<Return>", self.on_entry_enter)
         self.entry_time.bind("<FocusOut>", self.on_entry_enter)
 
-        # --- LIVE STATUS (NEU) ---
-        # Dieser Bereich zeigt an, wie lange man schon inaktiv ist
+        # --- LIVE STATUS ---
         self.frame_live = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_live.pack(pady=(10, 0), padx=20, fill="x")
 
@@ -114,11 +131,17 @@ class MainWindow(ctk.CTk):
         self.btn_toggle = ctk.CTkButton(self, text="START", command=self.toggle_monitoring, height=45, font=("Segoe UI", 15, "bold"))
         self.btn_toggle.pack(pady=20, padx=40, fill="x")
 
-        # Debug Label entfernen wir oder machen es unsichtbar, da wir jetzt die Live-Info haben
-        self.lbl_debug = ctk.CTkLabel(self, text="", text_color="gray", font=("Consolas", 10))
-        # self.lbl_debug.pack(side="bottom") 
-
     # --- LOGIK ---
+
+    def toggle_appearance(self):
+        # Wenn der Switch an ist -> Dark, sonst -> Light
+        if self.switch_dark.get() == 1:
+            new_mode = "Dark"
+        else:
+            new_mode = "Light"
+        
+        ctk.set_appearance_mode(new_mode)
+        self.config.set("appearance_mode", new_mode)
 
     def change_language(self, choice):
         lang_code = "de" if choice == "Deutsch" else "en"
@@ -138,6 +161,7 @@ class MainWindow(ctk.CTk):
         self.lbl_presets.configure(text=self.loc.get("PRESET_LABEL"))
         self.lbl_action.configure(text=self.loc.get("LBL_ACTION"))
         self.lbl_time.configure(text=self.loc.get("LBL_LIMIT"))
+        self.switch_dark.configure(text=self.loc.get("LBL_DARKMODE"))
         
         action_display_values = [self.loc.get(self.action_map[k]) for k in self.action_keys]
         self.combo_action.configure(values=action_display_values)
@@ -149,7 +173,11 @@ class MainWindow(ctk.CTk):
         if self.is_monitoring:
             self.lbl_status.configure(text=self.loc.get("STATUS_ACTIVE"))
             self.btn_toggle.configure(text=self.loc.get("BTN_STOP"))
-            self.lbl_live_info.configure(text_color="#ffffff") # Weiß wenn aktiv
+            # Im Light Mode ist Weißer Text auf weißem Grund schlecht,
+            # daher nehmen wir "text_color" raus oder setzen es dynamisch.
+            # CustomTkinter regelt Farben meist automatisch gut, 
+            # aber bei aktiver Überwachung wollen wir grün/rot
+            self.lbl_live_info.configure(text_color=("#333333", "#ffffff")) # (Light, Dark)
         else:
             self.lbl_status.configure(text=self.loc.get("STATUS_INACTIVE"))
             self.btn_toggle.configure(text=self.loc.get("BTN_START"))
@@ -187,14 +215,12 @@ class MainWindow(ctk.CTk):
         if self.is_monitoring:
             self.btn_toggle.configure(fg_color="#C0392B", hover_color="#922B21")
             self.lbl_status.configure(text_color="#2ECC71")
-            # Inputs sperren
             self.slider.configure(state="disabled")
             self.entry_time.configure(state="disabled")
             self.combo_action.configure(state="disabled")
         else:
             self.btn_toggle.configure(fg_color="#1f6aa5", hover_color="#144870")
             self.lbl_status.configure(text_color="#ff5555")
-            # Inputs freigeben
             self.slider.configure(state="normal")
             self.entry_time.configure(state="normal")
             self.combo_action.configure(state="normal")
@@ -205,26 +231,21 @@ class MainWindow(ctk.CTk):
             idle_sec = self.monitor.get_idle_seconds()
             limit_sec = self.target_minutes * 60
             
-            # --- NEU: Live Anzeige Update ---
-            # Formatieren MM:SS
             curr_m, curr_s = divmod(int(idle_sec), 60)
             lim_m, lim_s = divmod(limit_sec, 60)
             
             time_str = f"{curr_m:02d}:{curr_s:02d} / {lim_m:02d}:00"
             self.lbl_live_info.configure(text=time_str)
 
-            # Progress Bar (0.0 bis 1.0)
             if limit_sec > 0:
                 progress = idle_sec / limit_sec
                 if progress > 1.0: progress = 1.0
                 self.progress_live.set(progress)
                 
-                # Farbe ändern kurz vor Ende
                 if progress > 0.9:
-                    self.progress_live.configure(progress_color="#ff5555") # Rot
+                    self.progress_live.configure(progress_color="#ff5555")
                 else:
-                    self.progress_live.configure(progress_color="#1f6aa5") # Blau
-            # -------------------------------
+                    self.progress_live.configure(progress_color="#1f6aa5")
 
             trigger_sec = limit_sec - 60
 

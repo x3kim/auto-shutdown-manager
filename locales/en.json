@@ -15,5 +15,6 @@
     "ACTION_SHUTDOWN": "Shutdown",
     "ACTION_RESTART": "Restart",
     "ACTION_SLEEP": "Sleep",
-    "ACTION_HIBERNATE": "Hibernate"
+    "ACTION_HIBERNATE": "Hibernate",
+    "LBL_DARKMODE": "Dark Mode"
 }

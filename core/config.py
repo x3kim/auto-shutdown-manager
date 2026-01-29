@@ -8,12 +8,11 @@ class ConfigManager:
     DEFAULT_SETTINGS = {
         "language": "de",
         "target_minutes": 60,
-        "action": "shutdown" # shutdown, restart, sleep, hibernate
+        "action": "shutdown",
+        "appearance_mode": "Dark"  # <--- NEU: Speichert das Design
     }
 
     def __init__(self):
-        # Wir speichern die Config im selben Ordner wie die main.py (oder die .exe)
-        # sys.executable ist der Pfad zur python.exe oder zur fertigen App.exe
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
@@ -24,7 +23,6 @@ class ConfigManager:
         self.load()
 
     def load(self):
-        """Lädt Einstellungen, falls Datei existiert."""
         if os.path.exists(self.config_path):
             try:
                 with open(self.config_path, "r", encoding="utf-8") as f:
@@ -34,7 +32,6 @@ class ConfigManager:
                 print(f"Fehler beim Laden der Config: {e}")
 
     def save(self):
-        """Speichert Einstellungen in settings.json."""
         try:
             with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=4)

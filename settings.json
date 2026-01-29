@@ -1,5 +1,6 @@
 {
     "language": "en",
     "target_minutes": 2,
-    "action": "shutdown"
+    "action": "shutdown",
+    "appearance_mode": "Dark"
 }

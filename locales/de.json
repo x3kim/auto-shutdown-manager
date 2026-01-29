@@ -15,5 +15,6 @@
     "ACTION_SHUTDOWN": "Herunterfahren",
     "ACTION_RESTART": "Neustarten",
     "ACTION_SLEEP": "Energie sparen",
-    "ACTION_HIBERNATE": "Ruhezustand"
+    "ACTION_HIBERNATE": "Ruhezustand",
+    "LBL_DARKMODE": "Dunkelmodus"
 }
