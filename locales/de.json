@@ -1,0 +1,15 @@
+{
+    "APP_TITLE": "Auto Shutdown Manager",
+    "HEADER_TITLE": "Inaktivitäts-Timer",
+    "HEADER_SUB": "Fährt den PC herunter bei Inaktivität.",
+    "LBL_LIMIT": "Limit: {0} Minuten ({1} Std.)",
+    "STATUS_INACTIVE": "Status: Inaktiv",
+    "STATUS_ACTIVE": "Status: Überwachung läuft...",
+    "BTN_START": "Überwachung Starten",
+    "BTN_STOP": "Überwachung Stoppen",
+    "WARN_TITLE": "PC fährt gleich herunter!",
+    "WARN_INFO": "Bewege die Maus zum Abbrechen.",
+    "PRESET_LABEL": "Schnellwahl:",
+    "LANG_LABEL": "Sprache / Language:",
+    "DEBUG_IDLE": "Inaktiv seit: {0}m {1}s"
+}

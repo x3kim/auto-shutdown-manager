@@ -1,0 +1,15 @@
+{
+    "APP_TITLE": "Auto Shutdown Manager",
+    "HEADER_TITLE": "Inactivity Timer",
+    "HEADER_SUB": "Shuts down PC automatically when idle.",
+    "LBL_LIMIT": "Limit: {0} Minutes ({1} hr)",
+    "STATUS_INACTIVE": "Status: Inactive",
+    "STATUS_ACTIVE": "Status: Monitoring active...",
+    "BTN_START": "Start Monitoring",
+    "BTN_STOP": "Stop Monitoring",
+    "WARN_TITLE": "PC is shutting down!",
+    "WARN_INFO": "Move mouse to cancel.",
+    "PRESET_LABEL": "Presets:",
+    "LANG_LABEL": "Language:",
+    "DEBUG_IDLE": "Idle since: {0}m {1}s"
+}
