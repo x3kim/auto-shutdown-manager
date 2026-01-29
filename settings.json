@@ -1,5 +1,5 @@
 {
-    "language": "de",
-    "target_minutes": 240,
+    "language": "en",
+    "target_minutes": 2,
     "action": "shutdown"
 }
