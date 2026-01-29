@@ -11,5 +11,9 @@
     "WARN_INFO": "Bewege die Maus zum Abbrechen.",
     "PRESET_LABEL": "Schnellwahl:",
     "LANG_LABEL": "Sprache / Language:",
-    "DEBUG_IDLE": "Inaktiv seit: {0}m {1}s"
+    "DEBUG_IDLE": "Inaktiv seit: {0}m {1}s",
+    "LBL_ACTION": "Aktion:",
+    "ACTION_SHUTDOWN": "Herunterfahren",
+    "ACTION_RESTART": "Neustarten",
+    "ACTION_SLEEP": "Energie sparen"
 }

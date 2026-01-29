@@ -11,5 +11,9 @@
     "WARN_INFO": "Move mouse to cancel.",
     "PRESET_LABEL": "Presets:",
     "LANG_LABEL": "Language:",
-    "DEBUG_IDLE": "Idle since: {0}m {1}s"
+    "DEBUG_IDLE": "Idle since: {0}m {1}s",
+    "LBL_ACTION": "Action:",
+    "ACTION_SHUTDOWN": "Shutdown",
+    "ACTION_RESTART": "Restart",
+    "ACTION_SLEEP": "Sleep"
 }
