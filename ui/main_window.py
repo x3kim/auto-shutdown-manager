@@ -5,6 +5,7 @@ from core.monitor import IdleMonitor
 from core.localization import LocalizationManager
 from core.config import ConfigManager
 from ui.warning_dialog import WarningDialog
+from core.tray import SystemTrayIcon # <--- NEU IMPORTIERT
 
 class MainWindow(ctk.CTk):
     def __init__(self):
@@ -14,11 +15,11 @@ class MainWindow(ctk.CTk):
         self.config = ConfigManager()
         self.monitor = IdleMonitor()
         
-        # Sprache laden
+        # Sprache
         current_lang = self.config.get("language")
         self.loc = LocalizationManager(current_lang) 
         
-        # Design laden
+        # Design
         self.appearance_mode = self.config.get("appearance_mode")
         ctk.set_appearance_mode(self.appearance_mode)
         
@@ -29,6 +30,16 @@ class MainWindow(ctk.CTk):
         self.setup_window()
         self.setup_widgets()
         self.update_ui_texts()
+
+        # --- TRAY ICON SETUP (NEU) ---
+        # Wir fangen das "Schließen"-Event (X-Button) ab
+        self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
+        
+        # Tray Icon initialisieren
+        self.tray = SystemTrayIcon(self, "Auto Shutdown Manager")
+        self.tray.run() # Startet das Icon unten rechts
+        # -----------------------------
+
         self.main_loop()
 
     def setup_window(self):
@@ -37,28 +48,23 @@ class MainWindow(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.grid_columnconfigure(0, weight=1)
 
-        # --- ICON LADEN (NEU) ---
-        # Wir suchen die icon.ico im assets Ordner
+        # Icon für Fensterleiste laden
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
             base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            
         icon_path = os.path.join(base_path, "assets", "icon.ico")
-        
         if os.path.exists(icon_path):
-            self.iconbitmap(icon_path) # Setzt das Fenster-Icon (.ico)
+            self.iconbitmap(icon_path)
 
     def setup_widgets(self):
         # --- HEADER ---
         self.frame_top = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_top.pack(pady=10, padx=20, fill="x")
 
-        # Container für Buttons oben rechts
         self.frame_top_controls = ctk.CTkFrame(self.frame_top, fg_color="transparent")
         self.frame_top_controls.pack(side="right")
 
-        # Dark Mode Switch
         self.switch_dark = ctk.CTkSwitch(self.frame_top_controls, text="Dark", command=self.toggle_appearance)
         if self.appearance_mode == "Dark":
             self.switch_dark.select()
@@ -66,12 +72,10 @@ class MainWindow(ctk.CTk):
             self.switch_dark.deselect()
         self.switch_dark.pack(side="left", padx=(0, 15))
 
-        # Sprachauswahl
         self.combo_lang = ctk.CTkComboBox(self.frame_top_controls, values=["Deutsch", "English"], command=self.change_language, width=100)
         self.combo_lang.set("Deutsch" if self.config.get("language") == "de" else "English")
         self.combo_lang.pack(side="left")
 
-        # Titel
         self.lbl_head = ctk.CTkLabel(self, text="TITLE", font=("Segoe UI", 26, "bold"))
         self.lbl_head.pack(pady=(5, 5))
         self.lbl_sub = ctk.CTkLabel(self, text="SUBTITLE", text_color="gray")
@@ -81,34 +85,28 @@ class MainWindow(ctk.CTk):
         self.frame_settings = ctk.CTkFrame(self)
         self.frame_settings.pack(pady=10, padx=20, fill="x")
 
-        # Aktion
         self.lbl_action = ctk.CTkLabel(self.frame_settings, text="Action", font=("Segoe UI", 14, "bold"))
         self.lbl_action.pack(pady=(15, 5))
 
         self.action_map = {
-            "shutdown": "ACTION_SHUTDOWN", 
-            "restart": "ACTION_RESTART", 
-            "sleep": "ACTION_SLEEP",
-            "hibernate": "ACTION_HIBERNATE"
+            "shutdown": "ACTION_SHUTDOWN", "restart": "ACTION_RESTART", 
+            "sleep": "ACTION_SLEEP", "hibernate": "ACTION_HIBERNATE"
         }
         self.action_keys = ["shutdown", "restart", "sleep", "hibernate"]
 
         self.combo_action = ctk.CTkComboBox(self.frame_settings, values=["..."], command=self.change_action, width=200)
         self.combo_action.pack(pady=(0, 15))
 
-        # Presets
         self.lbl_presets = ctk.CTkLabel(self.frame_settings, text="Presets", font=("Segoe UI", 12, "bold"))
         self.lbl_presets.pack(pady=5)
         
         self.grid_presets = ctk.CTkFrame(self.frame_settings, fg_color="transparent")
         self.grid_presets.pack(pady=(0, 10))
-        
         ctk.CTkButton(self.grid_presets, text="30 min", width=60, command=lambda: self.set_time(30)).grid(row=0, column=0, padx=5)
         ctk.CTkButton(self.grid_presets, text="1 h",    width=60, command=lambda: self.set_time(60)).grid(row=0, column=1, padx=5)
         ctk.CTkButton(self.grid_presets, text="2 h",    width=60, command=lambda: self.set_time(120)).grid(row=0, column=2, padx=5)
         ctk.CTkButton(self.grid_presets, text="4 h",    width=60, command=lambda: self.set_time(240)).grid(row=0, column=3, padx=5)
 
-        # Zeit Einstellung
         self.lbl_time = ctk.CTkLabel(self.frame_settings, text="Limit", font=("Segoe UI", 16))
         self.lbl_time.pack(pady=5)
 
@@ -136,7 +134,6 @@ class MainWindow(ctk.CTk):
         self.progress_live.set(0)
         self.progress_live.pack(fill="x", pady=5)
 
-
         # --- FOOTER ---
         self.lbl_status = ctk.CTkLabel(self, text="Status", text_color="#ff5555", font=("Segoe UI", 14))
         self.lbl_status.pack(pady=5)
@@ -146,11 +143,29 @@ class MainWindow(ctk.CTk):
 
     # --- LOGIK ---
 
+    def minimize_to_tray(self):
+        """Versteckt das Fenster statt es zu schließen."""
+        self.withdraw() # Fenster unsichtbar machen
+        
+        # Optional: Benachrichtigung anzeigen
+        if self.is_monitoring:
+            self.tray.show_notification("Auto Shutdown", "Läuft im Hintergrund weiter...")
+
+    def show_window(self):
+        """Macht das Fenster wieder sichtbar (wird vom Tray aufgerufen)."""
+        self.deiconify() # Fenster sichtbar machen
+        self.lift()      # Nach vorne holen
+
+    def quit_app(self):
+        """Beendet alles sauber."""
+        self.monitor.set_keep_awake(False) # Wach-Modus aus
+        self.destroy() # Fenster zerstören
+        sys.exit(0)    # Programm beenden
+
+    # --- Restliche UI Logik (unverändert) ---
     def toggle_appearance(self):
-        if self.switch_dark.get() == 1:
-            new_mode = "Dark"
-        else:
-            new_mode = "Light"
+        if self.switch_dark.get() == 1: new_mode = "Dark"
+        else: new_mode = "Light"
         ctk.set_appearance_mode(new_mode)
         self.config.set("appearance_mode", new_mode)
 
@@ -219,10 +234,7 @@ class MainWindow(ctk.CTk):
 
     def toggle_monitoring(self):
         self.is_monitoring = not self.is_monitoring
-        
-        # --- NEU: PC WACH HALTEN ODER FREIGEBEN ---
         self.monitor.set_keep_awake(self.is_monitoring)
-        # ------------------------------------------
         
         if self.is_monitoring:
             self.btn_toggle.configure(fg_color="#C0392B", hover_color="#922B21")
@@ -264,6 +276,7 @@ class MainWindow(ctk.CTk):
             if idle_sec >= trigger_sec:
                 self.warning_active = True
                 self.deiconify() 
+                self.lift() # Nach vorne holen bei Alarm
                 WarningDialog(self, self.monitor, self.loc, self.on_warning_action)
 
         self.after(1000, self.main_loop)
