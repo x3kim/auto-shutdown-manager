@@ -1,6 +1,6 @@
 {
-    "language": "en",
-    "target_minutes": 2,
+    "language": "de",
+    "target_minutes": 240,
     "action": "shutdown",
     "appearance_mode": "Dark"
 }

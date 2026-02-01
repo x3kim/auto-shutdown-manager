@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import os
+import sys
 from core.monitor import IdleMonitor
 from core.localization import LocalizationManager
 from core.config import ConfigManager
@@ -16,7 +18,7 @@ class MainWindow(ctk.CTk):
         current_lang = self.config.get("language")
         self.loc = LocalizationManager(current_lang) 
         
-        # Design laden und setzen (WICHTIG: Bevor das Fenster gezeigt wird)
+        # Design laden
         self.appearance_mode = self.config.get("appearance_mode")
         ctk.set_appearance_mode(self.appearance_mode)
         
@@ -35,18 +37,29 @@ class MainWindow(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.grid_columnconfigure(0, weight=1)
 
+        # --- ICON LADEN (NEU) ---
+        # Wir suchen die icon.ico im assets Ordner
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+        icon_path = os.path.join(base_path, "assets", "icon.ico")
+        
+        if os.path.exists(icon_path):
+            self.iconbitmap(icon_path) # Setzt das Fenster-Icon (.ico)
+
     def setup_widgets(self):
         # --- HEADER ---
         self.frame_top = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_top.pack(pady=10, padx=20, fill="x")
 
-        # Container für Buttons oben rechts (Sprache + DarkMode)
+        # Container für Buttons oben rechts
         self.frame_top_controls = ctk.CTkFrame(self.frame_top, fg_color="transparent")
         self.frame_top_controls.pack(side="right")
 
         # Dark Mode Switch
         self.switch_dark = ctk.CTkSwitch(self.frame_top_controls, text="Dark", command=self.toggle_appearance)
-        # Status des Switches setzen basierend auf Config
         if self.appearance_mode == "Dark":
             self.switch_dark.select()
         else:
@@ -58,7 +71,7 @@ class MainWindow(ctk.CTk):
         self.combo_lang.set("Deutsch" if self.config.get("language") == "de" else "English")
         self.combo_lang.pack(side="left")
 
-        # Titel (linksbündig bzw. zentriert im Rest)
+        # Titel
         self.lbl_head = ctk.CTkLabel(self, text="TITLE", font=("Segoe UI", 26, "bold"))
         self.lbl_head.pack(pady=(5, 5))
         self.lbl_sub = ctk.CTkLabel(self, text="SUBTITLE", text_color="gray")
@@ -134,12 +147,10 @@ class MainWindow(ctk.CTk):
     # --- LOGIK ---
 
     def toggle_appearance(self):
-        # Wenn der Switch an ist -> Dark, sonst -> Light
         if self.switch_dark.get() == 1:
             new_mode = "Dark"
         else:
             new_mode = "Light"
-        
         ctk.set_appearance_mode(new_mode)
         self.config.set("appearance_mode", new_mode)
 
@@ -173,11 +184,7 @@ class MainWindow(ctk.CTk):
         if self.is_monitoring:
             self.lbl_status.configure(text=self.loc.get("STATUS_ACTIVE"))
             self.btn_toggle.configure(text=self.loc.get("BTN_STOP"))
-            # Im Light Mode ist Weißer Text auf weißem Grund schlecht,
-            # daher nehmen wir "text_color" raus oder setzen es dynamisch.
-            # CustomTkinter regelt Farben meist automatisch gut, 
-            # aber bei aktiver Überwachung wollen wir grün/rot
-            self.lbl_live_info.configure(text_color=("#333333", "#ffffff")) # (Light, Dark)
+            self.lbl_live_info.configure(text_color=("#333333", "#ffffff"))
         else:
             self.lbl_status.configure(text=self.loc.get("STATUS_INACTIVE"))
             self.btn_toggle.configure(text=self.loc.get("BTN_START"))
@@ -212,6 +219,11 @@ class MainWindow(ctk.CTk):
 
     def toggle_monitoring(self):
         self.is_monitoring = not self.is_monitoring
+        
+        # --- NEU: PC WACH HALTEN ODER FREIGEBEN ---
+        self.monitor.set_keep_awake(self.is_monitoring)
+        # ------------------------------------------
+        
         if self.is_monitoring:
             self.btn_toggle.configure(fg_color="#C0392B", hover_color="#922B21")
             self.lbl_status.configure(text_color="#2ECC71")
