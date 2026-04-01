@@ -21,10 +21,7 @@ def mock_windll():
 
 def test_get_idle_seconds(mock_windll):
     monitor = IdleMonitor()
-    # Test: if dwTime = 0, tick = 1000, idle = 1s
-    mock_windll.user32.GetLastInputInfo.side_effect = lambda x: setattr(
-        x.contents, "dwTime", 0
-    )
+    # dwTime defaults to 0, GetTickCount returns 1000 → idle = 1s
     assert monitor.get_idle_seconds() == 1.0
 
 
