@@ -41,9 +41,9 @@ class IdleMonitor:
         # WICHTIG: Vor dem Shutdown den Wach-Modus aufheben, sonst kann es haken
         self.set_keep_awake(False)
 
-        from . import logger
+        from . import logger as logger_module
 
-        logger.info(f"Führe Aktion aus: {action_type}")
+        logger_module.logger.info(f"Führe Aktion aus: {action_type}")
 
         if action_type == "shutdown":
             os.system("shutdown /s /t 0 /f")
