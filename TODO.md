@@ -1,52 +1,25 @@
-# TODO.md: Steps to Complete Auto-EXE Release & Clean Repo Setup
+# Fix Ruff Linting Errors - Approved Plan Steps
 
-## Current Status
-- Local Git repo ready (main branch, untracked project files).
-- Git config: user.name='x3kim', user.email='kimjanlim@googlemail.com'.
-- No GitHub remote yet.
+## 1. Fix core/config.py indentation (try-except blocks)
+- Align `except` with `try` in `load()` and `save()`
+- Indent logger import/error correctly
+- Status: ✅
 
-## Steps (to be checked off)
+## 2. Fix tests/test_monitor.py (F841/F821 monitor usage)
+- Ensure proper indentation for `assert monitor...`
+- Status: ✅
 
-### 1. GitHub Repo Setup [Pending]
-- Go to github.com → New repo: Name `auto-shutdown-manager` (public, no README/.gitignore/License – already local).
-- Run:
-  ```
-  git remote add origin https://github.com/x3kim/auto-shutdown-manager.git
-  git branch -M main
-  git add .
-  git commit -m "Initial commit: Auto Shutdown Manager v2.0.0 with CI/EXE build"
-  git push -u origin main
-  ```
-- Verify: Repo online, Actions tab shows first CI run (tests + EXE artifact).
+## 3. Fix ui/main_window.py E701 multi-line statements
+- Break one-liners in toggle_appearance, on_entry_enter, main_loop progress if
+- Status: ✅
 
-### 2. Update CI for Auto-Releases [Pending]
-- Edit `.github/workflows/ci.yml`: Add `release` job on tags `v*`. Parse version from pyproject.toml/git tag. Use `softprops/action-gh-release@v2` to create release + upload EXE.
+## 4. Fix ui/warning_dialog.py E722 bare except
+- Change to `except Exception:`
+- Status: ✅
 
-### 3. Polish Docs [Pending]
-- Edit `README.md`: Fix build instr to use `build.spec`, add GitHub Releases section, badges (release/downloads), prefer EXE download.
-- Edit `CHANGELOG.md`: Fix dates to actual (e.g. today for v2.0.0).
-- Edit `pyproject.toml`: Fix author email.
+## 5. Verify with ruff check .
+- Run command, expect 0 errors
+- Status: ✅
 
-### 4. Commit & Test [Pending]
-```
-git add .
-git commit -m "Polish: CI releases, docs, cleanup"
-git push
-```
-- Verify CI artifact.
-
-### 5. Tag & Auto-Release [Pending]
-```
-git tag v2.0.0
-git push origin v2.0.0
-```
-- Check Actions → New release w/ EXE downloadable.
-
-### 6. Final Checks [Pending]
-- Repo clean: No build artifacts (gitignore ok), badges work, EXE in Releases.
-- Update TODO.md as steps complete.
-
-**Next Action:** Bestätige GitHub username ('x3kim') & repo name ('auto-shutdown-manager')? Dann Step 1 manuell oder Commands ausführen?
-
-Progress: 3/6
-✅ Step 2 (CI auto-release), Step 3 (README/polish partial)
+## 6. Optional: ruff format .
+- Status: ✅
