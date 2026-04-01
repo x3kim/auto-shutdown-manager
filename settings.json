@@ -1,6 +1,7 @@
 {
-    "language": "de",
-    "target_minutes": 240,
-    "action": "shutdown",
-    "appearance_mode": "Dark"
+    "language": "en",
+    "target_minutes": 2,
+    "action": "hibernate",
+    "appearance_mode": "Dark",
+    "minimize_to_tray": true
 }

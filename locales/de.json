@@ -16,5 +16,6 @@
     "ACTION_RESTART": "Neustarten",
     "ACTION_SLEEP": "Energie sparen",
     "ACTION_HIBERNATE": "Ruhezustand",
-    "LBL_DARKMODE": "Dunkelmodus"
+    "LBL_DARKMODE": "Dunkelmodus",
+    "LBL_MINIMIZE_TRAY": "Minimieren in Info-Bereich"
 }

@@ -26,7 +26,8 @@ class LocalizationManager:
         file_path = os.path.join(self.locales_path, f"{lang_code}.json")
         
         if not os.path.exists(file_path):
-            print(f"FEHLER: Sprachdatei nicht gefunden: {file_path}")
+            from . import logger
+            logger.error(f"FEHLER: Sprachdatei nicht gefunden: {file_path}")
             # Fallback auf leeres Dict, damit App nicht crasht
             self.translations = {}
             return

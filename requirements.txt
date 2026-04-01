@@ -1,0 +1,9 @@
+customtkinter
+pystray
+pillow
+
+# Dev/Build
+pytest>=7.0
+ruff
+pyinstaller
+black

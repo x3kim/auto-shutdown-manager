@@ -5,7 +5,7 @@ from core.monitor import IdleMonitor
 from core.localization import LocalizationManager
 from core.config import ConfigManager
 from ui.warning_dialog import WarningDialog
-from core.tray import SystemTrayIcon # <--- NEU IMPORTIERT
+from core.tray import SystemTrayIcon
 
 class MainWindow(ctk.CTk):
     def __init__(self):
@@ -15,40 +15,47 @@ class MainWindow(ctk.CTk):
         self.config = ConfigManager()
         self.monitor = IdleMonitor()
         
-        # Sprache
         current_lang = self.config.get("language")
         self.loc = LocalizationManager(current_lang) 
         
-        # Design
         self.appearance_mode = self.config.get("appearance_mode")
         ctk.set_appearance_mode(self.appearance_mode)
         
         self.is_monitoring = False
         self.warning_active = False
         self.target_minutes = int(self.config.get("target_minutes"))
+        
+        # Einstellung laden: Wohin minimieren?
+        self.minimize_to_tray_active = self.config.get("minimize_to_tray")
 
         self.setup_window()
         self.setup_widgets()
         self.update_ui_texts()
 
-        # --- TRAY ICON SETUP (NEU) ---
-        # Wir fangen das "Schließen"-Event (X-Button) ab
-        self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
-        
-        # Tray Icon initialisieren
+        # --- TRAY ICON ---
         self.tray = SystemTrayIcon(self, "Auto Shutdown Manager")
-        self.tray.run() # Startet das Icon unten rechts
-        # -----------------------------
+        self.tray.run() 
+
+        # --- EVENT HANDLING ---
+        # "X" Button -> Beendet die App komplett (Standard)
+        self.protocol("WM_DELETE_WINDOW", self.quit_app)
+        
+        # Minimieren überwachen ("-")
+        # <Unmap> feuert, wenn das Fenster unsichtbar wird (Minimieren oder Desktop-Wechsel)
+        # <Map> feuert, wenn es wieder sichtbar wird
+        self.bind("<Unmap>", self.on_window_minimize)
+        self.bind("<Map>", self.on_window_restore)
+        
+        self.is_minimized = False
 
         self.main_loop()
 
     def setup_window(self):
         self.title("Auto Shutdown Manager v2")
-        self.geometry("500x650")
+        self.geometry("500x680") # Etwas Platz für die Checkbox unten
         ctk.set_default_color_theme("blue")
         self.grid_columnconfigure(0, weight=1)
 
-        # Icon für Fensterleiste laden
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
@@ -123,6 +130,15 @@ class MainWindow(ctk.CTk):
         self.entry_time.bind("<Return>", self.on_entry_enter)
         self.entry_time.bind("<FocusOut>", self.on_entry_enter)
 
+        # --- CHECKBOX TRAY (NEU) ---
+        # Hier kann der User entscheiden, ob "-" in die Taskleiste oder Tray minimiert
+        self.chk_tray = ctk.CTkCheckBox(self.frame_settings, text="Minimize to Tray", command=self.toggle_tray_setting)
+        if self.minimize_to_tray_active:
+            self.chk_tray.select()
+        else:
+            self.chk_tray.deselect()
+        self.chk_tray.pack(pady=(10, 20))
+
         # --- LIVE STATUS ---
         self.frame_live = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_live.pack(pady=(10, 0), padx=20, fill="x")
@@ -141,28 +157,50 @@ class MainWindow(ctk.CTk):
         self.btn_toggle = ctk.CTkButton(self, text="START", command=self.toggle_monitoring, height=45, font=("Segoe UI", 15, "bold"))
         self.btn_toggle.pack(pady=20, padx=40, fill="x")
 
-    # --- LOGIK ---
+    # --- FENSTER LOGIK ---
 
-    def minimize_to_tray(self):
-        """Versteckt das Fenster statt es zu schließen."""
-        self.withdraw() # Fenster unsichtbar machen
-        
-        # Optional: Benachrichtigung anzeigen
-        if self.is_monitoring:
-            self.tray.show_notification("Auto Shutdown", "Läuft im Hintergrund weiter...")
+    def toggle_tray_setting(self):
+        """Speichert die Entscheidung (Checkbox)."""
+        self.minimize_to_tray_active = bool(self.chk_tray.get())
+        self.config.set("minimize_to_tray", self.minimize_to_tray_active)
+
+    def on_window_minimize(self, event):
+        """Wird aufgerufen, wenn Fensterstatus sich ändert (z.B. Minimieren)."""
+        # Wir müssen prüfen, ob es wirklich ein Minimieren ("iconic") ist
+        # und ob es das Hauptfenster betrifft (event.widget == self)
+        if event.widget == self:
+            if self.state() == "iconic":
+                self.is_minimized = True
+                # Wenn User "Minimize to Tray" aktiviert hat -> Fenster verstecken
+                if self.minimize_to_tray_active:
+                    self.withdraw() # Aus Taskleiste entfernen
+                    # Nur benachrichtigen, wenn Überwachung läuft
+                    if self.is_monitoring:
+                        self.tray.show_notification("Auto Shutdown", "Läuft im Hintergrund weiter...")
+
+    def on_window_restore(self, event):
+        if event.widget == self and self.state() == "normal":
+            self.is_minimized = False
 
     def show_window(self):
-        """Macht das Fenster wieder sichtbar (wird vom Tray aufgerufen)."""
-        self.deiconify() # Fenster sichtbar machen
-        self.lift()      # Nach vorne holen
+        """Aufruf durch Tray Icon 'Öffnen'."""
+        self.deiconify() # Sichtbar machen
+        self.state("normal") # Falls minimiert, wiederherstellen
+        self.lift()
+        self.attributes("-topmost", True) # Kurz nach vorne
+        self.attributes("-topmost", False)
 
     def quit_app(self):
-        """Beendet alles sauber."""
-        self.monitor.set_keep_awake(False) # Wach-Modus aus
-        self.destroy() # Fenster zerstören
-        sys.exit(0)    # Programm beenden
+        """X-Button oder Tray-Beenden."""
+        self.monitor.set_keep_awake(False)
+        # Tray Icon stoppen (Wichtig, sonst läuft Prozess weiter!)
+        if hasattr(self, 'tray') and self.tray.icon:
+            self.tray.icon.stop()
+        self.destroy()
+        sys.exit(0)
 
-    # --- Restliche UI Logik (unverändert) ---
+    # --- UI LOGIK (Rest) ---
+
     def toggle_appearance(self):
         if self.switch_dark.get() == 1: new_mode = "Dark"
         else: new_mode = "Light"
@@ -188,6 +226,7 @@ class MainWindow(ctk.CTk):
         self.lbl_action.configure(text=self.loc.get("LBL_ACTION"))
         self.lbl_time.configure(text=self.loc.get("LBL_LIMIT"))
         self.switch_dark.configure(text=self.loc.get("LBL_DARKMODE"))
+        self.chk_tray.configure(text=self.loc.get("LBL_MINIMIZE_TRAY"))
         
         action_display_values = [self.loc.get(self.action_map[k]) for k in self.action_keys]
         self.combo_action.configure(values=action_display_values)
@@ -276,7 +315,8 @@ class MainWindow(ctk.CTk):
             if idle_sec >= trigger_sec:
                 self.warning_active = True
                 self.deiconify() 
-                self.lift() # Nach vorne holen bei Alarm
+                self.state("normal") # Falls minimiert, hochholen
+                self.lift() 
                 WarningDialog(self, self.monitor, self.loc, self.on_warning_action)
 
         self.after(1000, self.main_loop)

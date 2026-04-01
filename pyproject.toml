@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-shutdown-manager"
+version = "2.0.0"
+description = "Windows idle timer for automatic shutdown/sleep"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "x3kim", email = "kimjanlim@googlemail.com"}]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "customtkinter",
+    "pystray",
+    "pillow",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "pyinstaller",
+    "black",
+]

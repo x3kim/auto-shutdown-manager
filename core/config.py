@@ -3,13 +3,12 @@ import os
 import sys
 
 class ConfigManager:
-    """Verwaltet die Benutzereinstellungen (Persistenz)."""
-
     DEFAULT_SETTINGS = {
         "language": "de",
         "target_minutes": 60,
         "action": "shutdown",
-        "appearance_mode": "Dark"  # <--- NEU: Speichert das Design
+        "appearance_mode": "Dark",
+        "minimize_to_tray": False  # <--- NEU: Standard ist "Aus" (Taskleiste)
     }
 
     def __init__(self):
@@ -28,15 +27,17 @@ class ConfigManager:
                 with open(self.config_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     self.settings.update(data)
-            except Exception as e:
-                print(f"Fehler beim Laden der Config: {e}")
+except Exception as e:
+                from . import logger
+                logger.error(f"Fehler beim Laden der Config: {e}")
 
     def save(self):
         try:
             with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=4)
-        except Exception as e:
-            print(f"Fehler beim Speichern der Config: {e}")
+except Exception as e:
+            from . import logger
+            logger.error(f"Fehler beim Speichern der Config: {e}")
 
     def get(self, key):
         return self.settings.get(key, self.DEFAULT_SETTINGS.get(key))
